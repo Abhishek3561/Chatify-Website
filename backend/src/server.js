@@ -19,7 +19,10 @@ app.use(cookieParser());
 // CORS (frontend URL from Vercel)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: [
+      "http://localhost:5173",
+      "https://chatify-website-ojtl2z0ad-abhishek3561s-projects.vercel.app"
+    ],
     credentials: true,
   })
 );
