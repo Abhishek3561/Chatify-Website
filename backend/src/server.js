@@ -1,51 +1,35 @@
 import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import cors from "cors";
+import dotenv from "dotenv/config"
+import authRoutes from "./routes/auth.route.js";
+import messageRoutes from "./routes/message.route.js";
 import { connectDB } from "./lib/db.js";
-import authRoutes from "./routers/authRoute.js";
-import messageRoutes from "./routers/messageRoute.js";
+
 import { app, server } from "./lib/socket.js";
 
-dotenv.config();
+const __dirname = path.resolve();
 
-// IMPORTANT for Render + cookies
-app.set("trust proxy", 1);
+const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "5mb" })); // req.body
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(cookieParser());
 
-// CORS (frontend URL from Vercel)
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "https://chatify-website-k1j2oyz80-abhishek3561s-projects.vercel.app",
-    ],
-    credentials: true,
-  })
-);
-
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-// Test route (optional)
-app.get("/", (req, res) => {
-  res.send("Backend is running");
-});
+// make ready for deployment
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-const PORT = process.env.PORT || 5000;
-
-connectDB()
-  .then(() => {
-    console.log("MongoDB connected");
-
-    server.listen(PORT, () => {
-      console.log("Server running on port " + PORT);
-    });
-  })
-  .catch((err) => {
-    console.log("DB connection failed ❌", err);
+  app.get("*", (_, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
+}
+
+server.listen(PORT, () => {
+  console.log("Server running on port: " + PORT);
+  connectDB();
+});
